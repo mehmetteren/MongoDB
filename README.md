@@ -2,7 +2,7 @@
 
 request structure:
 client_ip: integer
-method: char[4]
+method: char[10]
 key: long int
 value: char[vsize]
 
