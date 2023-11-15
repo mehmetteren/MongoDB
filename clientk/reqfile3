@@ -1,0 +1,5 @@
+GET 210
+PUT 300 string1
+PUT 301 string2
+GET 30
+PUT 101 Thatis

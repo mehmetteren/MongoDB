@@ -1,0 +1,6 @@
+PUT 100 This
+PUT 101 That
+PUT 102 Hello
+PUT 200 Bye
+PUT 210 The
+DEL 102
