@@ -1,0 +1,3 @@
+/Users/yusufbalasar/Desktop/ders/3-2/CS342/project_2/src/cmake-build-debug/CMakeFiles/src.dir
+/Users/yusufbalasar/Desktop/ders/3-2/CS342/project_2/src/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/yusufbalasar/Desktop/ders/3-2/CS342/project_2/src/cmake-build-debug/CMakeFiles/rebuild_cache.dir
