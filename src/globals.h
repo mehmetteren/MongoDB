@@ -5,7 +5,8 @@
 #ifndef SRC_GLOBALS_H
 #define SRC_GLOBALS_H
 
-#define MAX_DELETED_OFFSET_COUNT 20
+// delete_ht the files if you change this
+#define MAX_DELETED_OFFSET_COUNT 2
 
 #define MAX_VSIZE 1024
 #define MIN_VSIZE 32
@@ -22,42 +23,50 @@
 
 #include <stdbool.h>
 #include <time.h>
+#include <pthread.h>
 #include "hash_table.h"
 
-
-struct timespec program_start;
+extern struct timespec program_start;
 extern int dcount;
 extern char* fname;
 extern int tcount;
 extern int vsize;
 extern char* mqname;
+extern char* request_mq_name;
+extern char* response_mq_name;
 extern int dlevel;
 
 // starts from 1, datafile1 -> 1, datafile2 -> 2, ...
 extern HashTable** tables;
+extern pthread_mutex_t* file_locks;
+extern pthread_t* workers;
 
+// 4 + 4 + 100 + vsize = 108 + vsize
 typedef struct {
     int client_ip;
-    char value[MAX_VSIZE];
     int status_code;
     char info_message[100];
+    char* value;
 } Response;
 
+// 4 + 10 + 8 + vsize = 22 + vsize
 typedef struct {
     int client_ip;
     char method[10];
     long int key;
-    char value[MAX_VSIZE];
+    char* value;
 } Request;
 
 typedef struct {
     long int key;
-    char* value;
     bool is_deleted;
+    char* value;
 } Entry;
 
 Entry* createEntry(long int key, const char *value, int valueSize);
 void freeEntry(Entry* entry);
+Response* createResponse(int client_ip, char* value, int status_code, char* info_message, int valueSize);
+void freeResponse(Response* res);
 void logg(int level, const char *format, ...);
 
 #endif //SRC_GLOBALS_H

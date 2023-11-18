@@ -7,12 +7,15 @@
 
 
 int start_server();
-int start_fe_thread();
-int create_workers();
-Request* receive_request(); // retrieves request from message queue 1
-int send_response(Response*); // sends response to message queue 2
-int find_key();
-int write_to_file();
+void* fe_thread_func();
+void* worker_thread_func();
 
+Response get(Request* req);
+Response put(Request* req);
+Response delete(Request* req);
+Response dump(Request* req);
+Response quitserver(Request* req);
+
+int create_workers();
 
 #endif //SRC_SERVER_H

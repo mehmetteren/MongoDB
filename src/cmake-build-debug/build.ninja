@@ -79,6 +79,12 @@ build CMakeFiles/src.dir/disk.c.o: C_COMPILER__src_unscanned_Debug /Users/yusufb
   OBJECT_DIR = CMakeFiles/src.dir
   OBJECT_FILE_DIR = CMakeFiles/src.dir
 
+build CMakeFiles/src.dir/mq.c.o: C_COMPILER__src_unscanned_Debug /Users/yusufbalasar/Desktop/ders/3-2/CS342/project_2/src/mq.c || cmake_object_order_depends_target_src
+  DEP_FILE = CMakeFiles/src.dir/mq.c.o.d
+  FLAGS = -g -std=gnu11 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk -fcolor-diagnostics
+  OBJECT_DIR = CMakeFiles/src.dir
+  OBJECT_FILE_DIR = CMakeFiles/src.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target src
@@ -87,7 +93,7 @@ build CMakeFiles/src.dir/disk.c.o: C_COMPILER__src_unscanned_Debug /Users/yusufb
 #############################################
 # Link the executable src
 
-build src: C_EXECUTABLE_LINKER__src_Debug CMakeFiles/src.dir/main.c.o CMakeFiles/src.dir/globals.c.o CMakeFiles/src.dir/server.c.o CMakeFiles/src.dir/hash_table.c.o CMakeFiles/src.dir/disk.c.o
+build src: C_EXECUTABLE_LINKER__src_Debug CMakeFiles/src.dir/main.c.o CMakeFiles/src.dir/globals.c.o CMakeFiles/src.dir/server.c.o CMakeFiles/src.dir/hash_table.c.o CMakeFiles/src.dir/disk.c.o CMakeFiles/src.dir/mq.c.o
   FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk
   OBJECT_DIR = CMakeFiles/src.dir
   POST_BUILD = :
