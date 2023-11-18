@@ -48,7 +48,7 @@ int start_server(){
 }
 
 void* worker_thread_func(){
-    mqd_t mqd = mq_open(response_mq_name, O_WRONLY, 0666, NULL);
+    mqd_t mqd = mq_open(response_mq_name, O_WRONLY);
     if (mqd == -1) {
         perror("Error opening message queue");
         exit(EXIT_FAILURE);
@@ -104,11 +104,12 @@ void* worker_thread_func(){
              res.client_ip, res.status_code, res.info_message, res.value);
     }
 
+    mq_close(mqd);
     return NULL;
 }
 
 void* fe_thread_func(){
-    mqd_t mqd = mq_open(request_mq_name, O_RDONLY, 0666, NULL);
+    mqd_t mqd = mq_open(request_mq_name, O_RDONLY);
 
     Request req;
 
@@ -134,6 +135,7 @@ void* fe_thread_func(){
         pthread_mutex_unlock(&buffer_mutex);
     }
 
+    mq_close(mqd);
     return NULL;
 }
 

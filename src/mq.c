@@ -14,15 +14,15 @@ int receive_request(Request* req, mqd_t receive_mq) {
         return -1;
     }
 
-    size_t total_size = sizeof(Request) - sizeof(req->value) + vsize;
+    size_t total_size = sizeof(Request) - sizeof(req->value) + vsize + 1;
 
-    char *buffer = malloc(total_size);
+    char *buffer = malloc(8192);
     if (buffer == NULL) {
         perror("Unable to allocate memory for buffer");
         return -1;
     }
 
-    ssize_t bytes_read = mq_receive(receive_mq, buffer, total_size, NULL);
+    ssize_t bytes_read = mq_receive(receive_mq, buffer, total_size, 0);
     if (bytes_read == -1) {
         perror("Error receiving message");
         free(buffer);
@@ -78,17 +78,18 @@ int send_response(Response* res, mqd_t send_mq) {
 int create_mqs() {
     mqd_t request_mq; mqd_t response_mq;
 
-    request_mq_name = malloc(strlen(mqname) + sizeof(char));
-    response_mq_name = malloc(strlen(mqname) + sizeof(char));
+    request_mq_name = malloc(strlen(mqname) + 2);
+    response_mq_name = malloc(strlen(mqname) + 2);
 
     sprintf(request_mq_name, "/%s1", mqname);
     sprintf(response_mq_name, "/%s2", mqname);
 
+    mq_unlink(request_mq_name);
+    mq_unlink(response_mq_name);
+
     struct mq_attr attr;
-    attr.mq_flags = 0;
-    attr.mq_maxmsg = 50;
-    attr.mq_msgsize = 22 + vsize; // Assuming Request and Response have similar sizes
-    attr.mq_curmsgs = 0;
+    attr.mq_maxmsg = 10;
+    attr.mq_msgsize = 22 + vsize;
 
     request_mq = mq_open(request_mq_name, O_CREAT | O_RDWR, 0666, &attr);
     if (request_mq == (mqd_t)-1) {
@@ -103,6 +104,17 @@ int create_mqs() {
         mq_close(request_mq);
         return -1;
     }
+
+    attr.mq_msgsize = 12323213;
+    mq_getattr(request_mq, &attr);
+    printf("Request queue attributes:\n");
+    printf("Maximum # of messages on queue:   %ld\n", attr.mq_maxmsg);
+    printf("Maximum message size:             %ld\n", attr.mq_msgsize);
+
+    mq_getattr(response_mq, &attr);
+    printf("Response queue attributes:\n");
+    printf("Maximum # of messages on queue:   %ld\n", attr.mq_maxmsg);
+    printf("Maximum message size:             %ld\n", attr.mq_msgsize);
 
     mq_close(request_mq);
     mq_close(response_mq);
