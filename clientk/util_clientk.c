@@ -57,7 +57,7 @@ int cli( int argc, char *argv[]) {
     printf("s: %d\n", vsize);
     printf("m: %s\n", mqname);
     printf("d: %d\n", dlevel);
-
+    isFinished = 0;
     return 0;
 }
 

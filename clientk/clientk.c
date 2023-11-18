@@ -113,11 +113,12 @@ void* clientThreadFunction(void* arg) {
     }
 
     fclose(inputFile);
+
     return NULL;
 }
 
 void* frontEndThreadFunction(void* arg) {
-    while (1) {  // Replace with an appropriate condition for termination
+    while (isFinished == 0) {  // Replace with an appropriate condition for termination
         struct Response response;
 
         // Placeholder: Receive a response from the server
@@ -169,6 +170,25 @@ int main(int argc, char* argv[]) {
         }
 
         // Wait for the front-end thread to complete (if it ever does)
+        struct Request request;
+        strncpy(request.method, "DUMP", sizeof(request.method) - 1);
+        request.method[sizeof(request.method) - 1] = '\0';
+        request.client_ip = 1;
+        request.value = malloc(vsize);
+        strncpy(request.value, "datastoredump.txt", sizeof(request.value) - 1);
+        sendMessage(request);
+
+
+        struct Request request2;
+        strncpy(request.method, "QUITSERVER", sizeof(request.method) - 1);
+        request.method[sizeof(request.method) - 1] = '\0';
+        request.client_ip = 1;
+        request.value = malloc(vsize);
+        sendMessage(request2);
+
+        isFinished = 1;
+
+
         pthread_join(feThread, NULL);
     }
 
@@ -177,9 +197,8 @@ int main(int argc, char* argv[]) {
         printf("Interactive mode\n");
         char input[1024];
         struct Request request;
-        int running = 1;
 
-        while (running) {
+        while (isFinished == 0) {
             printf("Enter request (PUT, GET, DEL, DUMP, QUIT, QUITSERVER): ");
             if (fgets(input, sizeof(input), stdin) == NULL) {
                 printf("Error reading input.\n");
@@ -194,12 +213,12 @@ int main(int argc, char* argv[]) {
             request.client_ip = 1;
             request.value = malloc(vsize);
             if (strcmp(request.method, "QUIT") == 0) {
-                running = 0;
+                isFinished = 1;
                 continue;
             } else if (strcmp(request.method, "QUITSERVER") == 0) {
                 // Send QUITSERVER request to server
                 sendMessage(request);
-                running = 0;
+                isFinished = 1;
                 continue;
             } else if (strcmp(request.method, "DUMP") == 0) {
                 token = strtok(NULL, " \n");

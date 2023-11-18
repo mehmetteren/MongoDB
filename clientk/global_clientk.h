@@ -10,4 +10,5 @@ extern char* fname;
 extern int vsize;
 extern char* mqname;
 extern int dlevel;
+extern int isFinished;
 #endif //PROJECT_2_GLOBAL_CLIENTK_H

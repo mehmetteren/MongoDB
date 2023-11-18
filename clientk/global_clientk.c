@@ -11,3 +11,4 @@ char* fname;
 int vsize;
 char* mqname;
 int dlevel;
+int isFinished;
