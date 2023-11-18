@@ -7,6 +7,7 @@
 #include <string.h>
 #include "global_clientk.h"
 #include "util_clientk.h"
+#include <mqueue.h>
 
 #define MAX_VSIZE 1024
 
@@ -29,9 +30,10 @@ struct Request {
 
 struct Response {
     int client_ip;
-    char* value;
     int status_code;
-    char info_message[MAX_VSIZE];
+    char info_message[100];
+    char* value;
+
 };
 
 struct Response* responses;
@@ -64,11 +66,82 @@ struct Request parseRequest(char *line, int threadId) {
     return req;
 }
 
-void sendMessage(struct Request request) {
+int sendRequest(struct Request* request, mqd_t send_mq) {
     //Send the request to the server via message queue
+
+    if (request == NULL) {
+        fprintf(stderr, "Request pointer is NULL\n");
+        return -1;
+    }
+
+    size_t total_size = sizeof(struct Request) - sizeof(request->value) + vsize;
+    char *buffer = malloc(total_size);
+
+    if (buffer == NULL) {
+        perror("Unable to allocate memory for buffer");
+        return -1;
+    }
+
+    memcpy(buffer, request, sizeof(struct Request) - sizeof(request->value));
+
+    memcpy(buffer + sizeof(struct Request) - sizeof(request->value), request->value, vsize);
+
+    // Send the buffer
+    int status = mq_send(send_mq, buffer, total_size, 0);
+    if (status == -1) {
+        perror("Error sending message");
+        free(buffer);
+        return -1;
+    }
+
+    free(buffer);
+    return 0;
+}
+
+int receiveResponse(struct Response* response, mqd_t receive_mq) {
+    //Send the request to the server via message queue
+
+    if (response == NULL) {
+        fprintf(stderr, "Response pointer is NULL\n");
+        return -1;
+    }
+
+    size_t total_size = sizeof(struct Response) - sizeof(response->value) + vsize;
+
+    char *buffer = malloc(total_size);
+    if (buffer == NULL) {
+        perror("Unable to allocate memory for buffer");
+        return -1;
+    }
+
+    ssize_t bytes_read = mq_receive(receive_mq, buffer, total_size, NULL);
+    if (bytes_read == -1) {
+        perror("Error receiving message");
+        free(buffer);
+        return -1;
+    }
+
+    memcpy(response, buffer, sizeof(struct Response) - sizeof(response->value));
+
+    response->value = malloc(vsize);
+    if (response->value == NULL) {
+        perror("Unable to allocate memory for request value");
+        free(buffer);
+        return -1;
+    }
+    memcpy(response->value, buffer + sizeof(struct Response) - sizeof(response->value), vsize);
+
+    free(buffer);
+    return 0;
 }
 
 void* clientThreadFunction(void* arg) {
+    mqd_t request_mq;
+    char* request_mq_name = malloc(strlen(mqname) + sizeof(char));
+    sprintf(request_mq_name, "/%s1", mqname);
+    request_mq = mq_open(request_mq_name, O_WRONLY);
+    free(request_mq_name);
+
     struct ClientThreadData* data = (struct ClientThreadData*)arg;
     int threadId = data->thread_id;
     printf("Client thread started with thread id: %d\n", threadId);
@@ -89,7 +162,7 @@ void* clientThreadFunction(void* arg) {
     while (fgets(line, BUFFER_SIZE, inputFile) != NULL) {
         // Process the line here
         struct Request request = parseRequest(line, threadId);
-        sendMessage(request);
+        sendRequest(&request, request_mq);
 
         if (dlevel == 1) {
             printf("Request of: %s, threadId: %d", line, threadId); // Example: Just printing the line
@@ -118,11 +191,25 @@ void* clientThreadFunction(void* arg) {
 }
 
 void* frontEndThreadFunction(void* arg) {
+
+    mqd_t response_mqt;
+
+    char* response_mq_name = malloc(strlen(mqname) + sizeof(char));
+
+    sprintf(response_mq_name, "/%s2", mqname);
+
+    response_mqt = mq_open(response_mq_name, O_RDONLY);
+    free(response_mq_name);
+    struct Response response;
+
     while (isFinished == 0) {  // Replace with an appropriate condition for termination
-        struct Response response;
 
         // Placeholder: Receive a response from the server
         // This should be replaced with actual message queue receive logic
+        if (receiveResponse(&response, response_mqt) < 0) {
+            perror("Error receiving response");
+            break;
+        }
 
         // Assuming response.client_ip indicates the client thread to be notified
         int clientThreadId = response.client_ip;
@@ -170,13 +257,20 @@ int main(int argc, char* argv[]) {
         }
 
         // Wait for the front-end thread to complete (if it ever does)
+
+        mqd_t request_mq;
+        char* request_mq_name = malloc(strlen(mqname) + sizeof(char));
+        sprintf(request_mq_name, "/%s1", mqname);
+        request_mq = mq_open(request_mq_name, O_WRONLY);
+        free(request_mq_name);
+
         struct Request request;
         strncpy(request.method, "DUMP", sizeof(request.method) - 1);
         request.method[sizeof(request.method) - 1] = '\0';
         request.client_ip = 1;
         request.value = malloc(vsize);
         strncpy(request.value, "datastoredump.txt", sizeof(request.value) - 1);
-        sendMessage(request);
+        sendRequest(&request, request_mq );
 
 
         struct Request request2;
@@ -184,10 +278,9 @@ int main(int argc, char* argv[]) {
         request.method[sizeof(request.method) - 1] = '\0';
         request.client_ip = 1;
         request.value = malloc(vsize);
-        sendMessage(request2);
+        sendRequest(&request2, request_mq);
 
         isFinished = 1;
-
 
         pthread_join(feThread, NULL);
     }
@@ -197,6 +290,12 @@ int main(int argc, char* argv[]) {
         printf("Interactive mode\n");
         char input[1024];
         struct Request request;
+
+        mqd_t request_mq;
+        char* request_mq_name = malloc(strlen(mqname) + sizeof(char));
+        sprintf(request_mq_name, "/%s1", mqname);
+        request_mq = mq_open(request_mq_name, O_WRONLY);
+        free(request_mq_name);
 
         while (isFinished == 0) {
             printf("Enter request (PUT, GET, DEL, DUMP, QUIT, QUITSERVER): ");
@@ -212,12 +311,13 @@ int main(int argc, char* argv[]) {
             request.method[sizeof(request.method) - 1] = '\0';
             request.client_ip = 1;
             request.value = malloc(vsize);
+
             if (strcmp(request.method, "QUIT") == 0) {
                 isFinished = 1;
                 continue;
             } else if (strcmp(request.method, "QUITSERVER") == 0) {
                 // Send QUITSERVER request to server
-                sendMessage(request);
+                sendRequest(&request, request_mq);
                 isFinished = 1;
                 continue;
             } else if (strcmp(request.method, "DUMP") == 0) {
@@ -227,7 +327,7 @@ int main(int argc, char* argv[]) {
                     // Handle DUMP request logic here
                     strncpy(request.value, token, sizeof(request.value) - 1);
                     // The token will have the output file name
-                    sendMessage(request);
+                    sendRequest(&request, request_mq);
                 }
             } else {
                 // For PUT, GET, DEL
@@ -247,7 +347,7 @@ int main(int argc, char* argv[]) {
                         }
                     }
                     // Send the request to the server
-                    sendMessage(request);
+                    sendRequest(&request, request_mq);
                 }
             }
         }
