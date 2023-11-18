@@ -56,7 +56,7 @@ struct Request parseRequest(char *line, int threadId) {
             if (strcmp(req.method, "PUT") == 0) {
                 token = strtok(NULL, " ");
                 if (token != NULL) {
-                    strncpy(req.value, token, sizeof(req.value) - 1);
+                    strncpy(req.value, token, vsize);
                     req.value[sizeof(req.value) - 1] = '\0'; // Ensure null-termination
                 }
             }
@@ -163,9 +163,8 @@ void* clientThreadFunction(void* arg) {
         // Process the line here
         struct Request request = parseRequest(line, threadId);
         sendRequest(&request, request_mq);
-
         if (dlevel == 1) {
-            printf("Request of: %s, threadId: %d", line, threadId); // Example: Just printing the line
+            printf("Request of: %s, threadId: %d \n", line, threadId); // Example: Just printing the line
         }
         // Lock mutex and wait for response
         pthread_mutex_lock(&data->mutex);
@@ -177,9 +176,9 @@ void* clientThreadFunction(void* arg) {
         // 500 server error get delete put
         struct Response response = responses[threadId - 1];
         if (dlevel == 1) {
-            printf("%s", response.info_message);
+            printf("%s\n", response.info_message);
             if (strcmp("GET", request.method) == 0)
-                printf("Value is: %s", response.value);
+                printf("Value is: %s\n", response.value);
         }
         // You can add logic to handle the received response
         pthread_mutex_unlock(&data->mutex);
@@ -191,13 +190,9 @@ void* clientThreadFunction(void* arg) {
 }
 
 void* frontEndThreadFunction(void* arg) {
-
     mqd_t response_mqt;
-
     char* response_mq_name = malloc(strlen(mqname) + sizeof(char));
-
     sprintf(response_mq_name, "/%s2", mqname);
-
     response_mqt = mq_open(response_mq_name, O_RDONLY);
     free(response_mq_name);
     struct Response response;
@@ -207,7 +202,7 @@ void* frontEndThreadFunction(void* arg) {
         // Placeholder: Receive a response from the server
         // This should be replaced with actual message queue receive logic
         if (receiveResponse(&response, response_mqt) < 0) {
-            perror("Error receiving response");
+            perror("Error receiving response\n");
             break;
         }
 
@@ -269,7 +264,7 @@ int main(int argc, char* argv[]) {
         request.method[sizeof(request.method) - 1] = '\0';
         request.client_ip = 1;
         request.value = malloc(vsize);
-        strncpy(request.value, "datastoredump.txt", sizeof(request.value) - 1);
+        strncpy(request.value, "datastoredump.txt", vsize);
         sendRequest(&request, request_mq );
 
 
@@ -325,7 +320,7 @@ int main(int argc, char* argv[]) {
                 printf("%s\n", token);
                 if (token != NULL) {
                     // Handle DUMP request logic here
-                    strncpy(request.value, token, sizeof(request.value) - 1);
+                    strncpy(request.value, token, vsize);
                     // The token will have the output file name
                     sendRequest(&request, request_mq);
                 }
@@ -342,7 +337,7 @@ int main(int argc, char* argv[]) {
                         printf("%s\n", token);
 
                         if (token != NULL) {
-                            strncpy(request.value, token, sizeof(request.value) - 1);
+                            strncpy(request.value, token, vsize);
                             request.value[sizeof(request.value) - 1] = '\0';
                         }
                     }
