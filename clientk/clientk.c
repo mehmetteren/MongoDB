@@ -24,22 +24,24 @@ struct Request {
     int client_ip;
     char method[10];
     long int key;
-    char value[MAX_VSIZE];
+    char* value;
 };
 
 struct Response {
     int client_ip;
-    char value[1024];
+    char* value;
     int status_code;
     char info_message[MAX_VSIZE];
 };
+
+struct Response* responses;
 
 struct Request parseRequest(char *line, int threadId) {
     struct Request req;
     memset(&req, 0, sizeof(struct Request));
 
     req.client_ip = threadId;
-
+    req.value = malloc(vsize);
     char *token = strtok(line, " ");
     if (token != NULL) {
         strncpy(req.method, token, sizeof(req.method) - 1);
@@ -80,25 +82,33 @@ void* clientThreadFunction(void* arg) {
         pthread_exit(NULL);
     }
 
-    const int BUFFER_SIZE = 256;
+    const int BUFFER_SIZE = 1050;
     char line[BUFFER_SIZE];
 
     // Read each line with fgets
     while (fgets(line, BUFFER_SIZE, inputFile) != NULL) {
         // Process the line here
-        printf("%s", line); // Example: Just printing the line
         struct Request request = parseRequest(line, threadId);
         sendMessage(request);
 
+        if (dlevel == 1) {
+            printf("Request of: %s, threadId: %d", line, threadId); // Example: Just printing the line
+        }
         // Lock mutex and wait for response
-        printf("Client thread waiting with thread id: %d\n", threadId);
-
         pthread_mutex_lock(&data->mutex);
         pthread_cond_wait(&data->cond, &data->mutex);
 
         // Process the response here
+        // 404 not found get delete
+        // 200 success get delete put
+        // 500 server error get delete put
+        struct Response response = responses[threadId - 1];
+        if (dlevel == 1) {
+            printf("%s", response.info_message);
+            if (strcmp("GET", request.method) == 0)
+                printf("Value is: %s", response.value);
+        }
         // You can add logic to handle the received response
-
         pthread_mutex_unlock(&data->mutex);
     }
 
@@ -120,7 +130,7 @@ void* frontEndThreadFunction(void* arg) {
         pthread_mutex_lock(&clientThreadsData[clientThreadId - 1].mutex);
 
         // Process response or store it in a shared area accessible by the client thread
-        // ...
+        responses[response.client_ip - 1 ] = response;
 
         pthread_cond_signal(&clientThreadsData[clientThreadId - 1].cond);
         pthread_mutex_unlock(&clientThreadsData[clientThreadId - 1].mutex);
@@ -130,31 +140,99 @@ void* frontEndThreadFunction(void* arg) {
 }
 
 
+
 int main(int argc, char* argv[]) {
     cli(argc, argv);
 
-    pthread_t* clientThreads = malloc(clicount * sizeof(pthread_t));
-    clientThreadsData = malloc(clicount * sizeof(struct ClientThreadData));
+    //input file mode
+    if ( clicount != 0 ) {
+        pthread_t* clientThreads = malloc(clicount * sizeof(pthread_t));
+        clientThreadsData = malloc(clicount * sizeof(struct ClientThreadData));
 
-    for (int i = 0; i < clicount; i++) {
+        //response array
+        responses = malloc(clicount * sizeof(struct Response));
+        for (int i = 0; i < clicount; i++) {
 
-       clientThreadsData[i].thread_id  = i + 1;
-       pthread_mutex_init(&clientThreadsData[i].mutex, NULL);
-       pthread_cond_init(&clientThreadsData[i].cond, NULL);
-       pthread_create(&clientThreads[i], NULL, clientThreadFunction, &clientThreadsData[i]);
+            clientThreadsData[i].thread_id  = i + 1;
+            pthread_mutex_init(&clientThreadsData[i].mutex, NULL);
+            pthread_cond_init(&clientThreadsData[i].cond, NULL);
+            pthread_create(&clientThreads[i], NULL, clientThreadFunction, &clientThreadsData[i]);
+        }
+
+        pthread_t feThread;
+        pthread_create(&feThread, NULL, frontEndThreadFunction, NULL);
+
+
+        // Wait for all threads to complete
+        for (int i = 0; i < clicount; i++) {
+            pthread_join(clientThreads[i], NULL);
+        }
+
+        // Wait for the front-end thread to complete (if it ever does)
+        pthread_join(feThread, NULL);
     }
 
-    //pthread_t feThread;
-    //pthread_create(&feThread, NULL, frontEndThreadFunction, NULL);
+    // interactive mode
+    else {
+        printf("Interactive mode\n");
+        char input[1024];
+        struct Request request;
+        int running = 1;
 
+        while (running) {
+            printf("Enter request (PUT, GET, DEL, DUMP, QUIT, QUITSERVER): ");
+            if (fgets(input, sizeof(input), stdin) == NULL) {
+                printf("Error reading input.\n");
+                continue;
+            }
 
-    // Wait for all threads to complete
-    for (int i = 0; i < clicount; i++) {
-        pthread_join(clientThreads[i], NULL);
+            char *token = strtok(input, " \n");
+            if (token == NULL) continue;
+
+            strncpy(request.method, token, sizeof(request.method) - 1);
+            request.method[sizeof(request.method) - 1] = '\0';
+            request.client_ip = 1;
+            request.value = malloc(vsize);
+            if (strcmp(request.method, "QUIT") == 0) {
+                running = 0;
+                continue;
+            } else if (strcmp(request.method, "QUITSERVER") == 0) {
+                // Send QUITSERVER request to server
+                sendMessage(request);
+                running = 0;
+                continue;
+            } else if (strcmp(request.method, "DUMP") == 0) {
+                token = strtok(NULL, " \n");
+                printf("%s\n", token);
+                if (token != NULL) {
+                    // Handle DUMP request logic here
+                    strncpy(request.value, token, sizeof(request.value) - 1);
+                    // The token will have the output file name
+                    sendMessage(request);
+                }
+            } else {
+                // For PUT, GET, DEL
+                token = strtok(NULL, " \n");
+                printf("%s\n", token);
+
+                if (token != NULL) {
+                    request.key = atol(token);
+
+                    if (strcmp(request.method, "PUT") == 0) {
+                        token = strtok(NULL, " \n");
+                        printf("%s\n", token);
+
+                        if (token != NULL) {
+                            strncpy(request.value, token, sizeof(request.value) - 1);
+                            request.value[sizeof(request.value) - 1] = '\0';
+                        }
+                    }
+                    // Send the request to the server
+                    sendMessage(request);
+                }
+            }
+        }
     }
-
-    // Wait for the front-end thread to complete (if it ever does)
-    //pthread_join(feThread, NULL);
 
     printf("program finished\n" );
 }

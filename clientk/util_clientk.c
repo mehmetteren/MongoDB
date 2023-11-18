@@ -46,6 +46,10 @@ int cli( int argc, char *argv[]) {
         }
     }
 
+    if ( clicount < 0 || clicount > 10) {
+        printf("N must be between 0 and 10\n");
+        exit_handler(1);
+    }
 
     //verification
     printf("n: %d\n", clicount);
