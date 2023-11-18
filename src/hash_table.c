@@ -42,6 +42,7 @@ void insert(HashTable *table, long int key, long int fileOffset) {
     newNode->fileOffset = fileOffset;
     newNode->next = table->buckets[index];
     table->buckets[index] = newNode;
+    logg(DEEP_DEBUG, "Inserted key %ld to hash table\n", key);
 }
 
 long int search(HashTable *table, long int key) {
@@ -49,14 +50,16 @@ long int search(HashTable *table, long int key) {
     Node *current = table->buckets[index];
     while (current) {
         if (current->key == key) {
+            logg(DEEP_DEBUG, "Found key %ld in hash table\n", key);
             return current->fileOffset; // Key found
         }
         current = current->next;
     }
+    logg(DEEP_DEBUG, "Key %ld not found in hash table\n", key);
     return -1; // Key not found
 }
 
-void delete(HashTable *table, long int key) {
+void delete_ht(HashTable *table, long int key) {
     unsigned int index = hash(key);
     Node *current = table->buckets[index];
     Node *previous = NULL;
@@ -68,6 +71,7 @@ void delete(HashTable *table, long int key) {
                 previous->next = current->next;
             }
             free(current);
+            logg(DEEP_DEBUG, "Deleted key %ld from hash table\n", key);
             return;
         }
         previous = current;

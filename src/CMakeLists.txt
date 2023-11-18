@@ -11,4 +11,6 @@ add_executable(src main.c
         hash_table.c
         hash_table.h
         disk.c
-        disk.h)
+        disk.h
+        mq.c
+        mq.h)
