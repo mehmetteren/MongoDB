@@ -249,28 +249,34 @@ int main(int argc, char* argv[]) {
 
         isFinished = 1;
 
-        mqd_t request_mq;
-        char* request_mq_name = malloc(strlen(mqname) + sizeof(char));
-        sprintf(request_mq_name, "/%s1", mqname);
-        request_mq = mq_open(request_mq_name, O_WRONLY);
-        free(request_mq_name);
-
         struct Request request;
+        struct Response response;
+        mqd_t request_mq, response_mq;
+        char* request_mq_name = malloc(strlen(mqname) + sizeof(char));
+        char* response_mq_name = malloc(strlen(mqname) + sizeof(char));
+        sprintf(request_mq_name, "/%s1", mqname);
+        sprintf(response_mq_name, "/%s2", mqname);
+        request_mq = mq_open(request_mq_name, O_WRONLY);
+        response_mq = mq_open(response_mq_name, O_RDONLY);
+        free(request_mq_name);
+        free(response_mq_name);
+
         strncpy(request.method, "DUMP", sizeof(request.method) - 1);
         request.method[sizeof(request.method) - 1] = '\0';
         request.client_ip = 1;
         request.value = malloc(vsize);
         strncpy(request.value, "datastoredump.txt", vsize);
+        request.value[vsize - 1] = '\0'; // Ensure null-termination
+
         sendRequest(&request, request_mq );
+        receiveResponse(&response, response_mq);
 
-
-        struct Request request2;
         strncpy(request.method, "QUITSERVER", sizeof(request.method) - 1);
         request.method[sizeof(request.method) - 1] = '\0';
         request.client_ip = 1;
         request.value = malloc(vsize);
-        sendRequest(&request2, request_mq);
-
+        sendRequest(&request, request_mq );
+        receiveResponse(&response, response_mq);
 
         pthread_join(feThread, NULL);
 
