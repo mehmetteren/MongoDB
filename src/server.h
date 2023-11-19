@@ -8,7 +8,7 @@
 
 int start_server();
 void* fe_thread_func();
-void* worker_thread_func();
+void* worker_thread_func(void* id);
 
 Response get(Request* req);
 Response put(Request* req);

@@ -12,9 +12,11 @@
 #include "hash_table.h"
 #include "server.h"
 int insert_test();
+//gcc -Wall -o server disk.c globals.c hash_table.c server.c mq.c main.c -lrt
 int main(){
     //insert_test();
     start_server();
+    //printf("%ld", sizeof(Request));
 }
 
 int insert_test() {

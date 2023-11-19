@@ -82,9 +82,17 @@ int sendRequest(struct Request* request, mqd_t send_mq) {
         return -1;
     }
 
-    memcpy(buffer, request, sizeof(struct Request) - sizeof(request->value));
+    if (memcpy(buffer, request, sizeof(struct Request) - sizeof(request->value)) < 0){
+        perror("Error copying request's first part");
+        free(buffer);
+        return -1;
+    }
 
-    memcpy(buffer + sizeof(struct Request) - sizeof(request->value), request->value, vsize);
+    if (memcpy(buffer + sizeof(struct Request) - sizeof(request->value), request->value, vsize)){
+        perror("Error copying request's second part");
+        free(buffer);
+        return -1;
+    }
 
     // Send the buffer
     int status = mq_send(send_mq, buffer, total_size, 0);

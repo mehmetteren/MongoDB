@@ -14,9 +14,9 @@ int receive_request(Request* req, mqd_t receive_mq) {
         return -1;
     }
 
-    size_t total_size = sizeof(Request) - sizeof(req->value) + vsize + 1;
+    size_t total_size = sizeof(Request) - sizeof(req->value) + vsize;
 
-    char *buffer = malloc(8192);
+    char *buffer = malloc(total_size);
     if (buffer == NULL) {
         perror("Unable to allocate memory for buffer");
         return -1;
@@ -28,8 +28,10 @@ int receive_request(Request* req, mqd_t receive_mq) {
         free(buffer);
         return -1;
     }
+    printf("BUFFER: %s, %ld\n", buffer, bytes_read);
 
     memcpy(req, buffer, sizeof(Request) - sizeof(req->value));
+    logg(DEEP_DEBUG, "BUFFER WITHOUT VALUE: %s\n", buffer);
 
     req->value = malloc(vsize);
     if (req->value == NULL) {
@@ -38,6 +40,8 @@ int receive_request(Request* req, mqd_t receive_mq) {
         return -1;
     }
     memcpy(req->value, buffer + sizeof(Request) - sizeof(req->value), vsize);
+
+    logg(DEEP_DEBUG, "BUFFER WITH VALUE: %s\n", buffer);
 
     free(buffer);
     return 0;
@@ -89,7 +93,7 @@ int create_mqs() {
 
     struct mq_attr attr;
     attr.mq_maxmsg = 10;
-    attr.mq_msgsize = 22 + vsize;
+    attr.mq_msgsize = sizeof(Request) - sizeof(char*) + vsize;
 
     request_mq = mq_open(request_mq_name, O_CREAT | O_RDWR, 0666, &attr);
     if (request_mq == (mqd_t)-1) {
@@ -97,7 +101,7 @@ int create_mqs() {
         return -1;
     }
 
-    attr.mq_msgsize = 108 + vsize;
+    attr.mq_msgsize = sizeof(Response) - sizeof(char*) + vsize;
     response_mq = mq_open(response_mq_name, O_CREAT | O_RDWR, 0666, &attr);
     if (response_mq == (mqd_t)-1) {
         perror("Error creating message queue 2");
@@ -105,7 +109,6 @@ int create_mqs() {
         return -1;
     }
 
-    attr.mq_msgsize = 12323213;
     mq_getattr(request_mq, &attr);
     printf("Request queue attributes:\n");
     printf("Maximum # of messages on queue:   %ld\n", attr.mq_maxmsg);

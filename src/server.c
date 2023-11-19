@@ -34,6 +34,8 @@ int start_server(){
 
     create_workers();
 
+    request_buffer = (Request*)malloc(buffer_size * sizeof(Request));
+
     pthread_t fe_thread;
     pthread_create(&fe_thread, NULL, fe_thread_func, NULL);
 
@@ -47,7 +49,10 @@ int start_server(){
     return 0;
 }
 
-void* worker_thread_func(){
+void* worker_thread_func(void* id){
+    int tid = *(int*)id;
+    logg(INFO, "Worker thread %d started\n", tid);
+
     mqd_t mqd = mq_open(response_mq_name, O_WRONLY);
     if (mqd == -1) {
         perror("Error opening message queue");
@@ -66,6 +71,7 @@ void* worker_thread_func(){
 
         memcpy(&req, &request_buffer[count - 1], sizeof(Request));
         count--;
+        printf("Worker thread %d received request from buffer, request method: %s\n", tid, req.method);
 
         pthread_cond_signal(&buffer_cond);
         pthread_mutex_unlock(&buffer_mutex);
@@ -79,8 +85,8 @@ void* worker_thread_func(){
             logg(INFO, "PUT request received\n");
             res = put(&req);
         }
-        else if (strcmp(req.method, "DELETE") == 0){
-            logg(INFO, "DELETE request received\n");
+        else if (strcmp(req.method, "DEL") == 0){
+            logg(INFO, "DEL request received\n");
             res = delete(&req);
         }
         else if (strcmp(req.method, "DUMP") == 0){
@@ -93,6 +99,7 @@ void* worker_thread_func(){
         }
         else{
             perror("Invalid request type");
+            continue;
         }
 
         // Send response to message queue 2
@@ -127,7 +134,7 @@ void* fe_thread_func(){
         while (count == buffer_size) {
             pthread_cond_wait(&buffer_cond, &buffer_mutex); // wait for a signal from a worker thread
         }
-
+        printf("CHECKPOINT 1\n");
         memcpy(&request_buffer[count], &req, sizeof(Request));
         count++;
 
@@ -143,7 +150,7 @@ int create_workers(){
     workers = (pthread_t *)malloc(tcount * sizeof(pthread_t));
 
     for (int i = 0; i < tcount; i++) {
-        if (pthread_create(&workers[i], NULL, worker_thread_func, NULL) != 0) {
+        if (pthread_create(&workers[i], NULL, worker_thread_func, &i) != 0) {
             perror("Failed to create worker thread");
             return 1;
         }
