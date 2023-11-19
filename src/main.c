@@ -31,7 +31,7 @@ int insert_test() {
         char value[vsize];
 
         sprintf(value, "%s--%d", val, a);
-        Entry* entry = (createEntry(a, value, vsize));
+        Entry* entry = (createEntry(a, value, vsize, 0));
         int res = insert_entry(entry);
         printf("result = %d\n", res);
 
@@ -55,7 +55,7 @@ int insert_test() {
         char value[vsize];
 
         sprintf(value, "%s--%d", val, a);
-        Entry* entry = (createEntry(a, value, vsize));
+        Entry* entry = (createEntry(a, value, vsize, 0));
         int res = insert_entry(entry);
         printf("result = %d\n", res);
 

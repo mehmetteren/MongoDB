@@ -286,7 +286,7 @@ int read_entry_from_file(Entry* entry, int fd, long int file_offset){
         return -1;
     }
 
-    *(entry) = *(createEntry(key, value, vsize));
+    *(entry) = *(createEntry(key, value, vsize, is_deleted));
 
     logg(DEEP_DEBUG, "Read entry: key->%ld, is_deleted->%d, value->%s\n", key, is_deleted, value);
     return EXIT_SUCCESS;
