@@ -7,5 +7,6 @@
 int cli(int, char*[]);
 
 void exit_handler(int);
+void logger(const char* format, ...);
 
 #endif //PROJECT_2_UTIL_CLIENTK_H

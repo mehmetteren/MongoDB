@@ -13,6 +13,7 @@ struct ClientThreadData {
     int thread_id;
     pthread_mutex_t mutex;
     pthread_cond_t cond;
+    int empty;
 };
 
 struct ClientThreadData* clientThreadsData;  // Array of client thread data
@@ -159,7 +160,11 @@ void* clientThreadFunction(void* arg) {
         }
 
         pthread_mutex_lock(&data->mutex);
-        pthread_cond_wait(&data->cond, &data->mutex);
+
+        while (data->empty ){
+            pthread_cond_wait(&data->cond, &data->mutex);
+
+        }
 
         // Process the response
         // 404 not found get delete
@@ -172,10 +177,12 @@ void* clientThreadFunction(void* arg) {
             if ((strcmp("GET", request.method) == 0) && response.status_code != 404)
                 printf("Value is: %s\n", response.value);
         }
+        data->empty = 1;
 
+        pthread_cond_signal(&data->cond);
         pthread_mutex_unlock(&data->mutex);
     }
-
+    printf("thread is closed%d\n", threadId);
     fclose(inputFile);
 
     return NULL;
@@ -193,16 +200,28 @@ void* frontEndThreadFunction(void* arg) {
 
     while (!isFinished) {
 
+        printf("entered frontend\n");
         if (receiveResponse(&response, response_mqt) < 0) {
             perror("Error receiving response\n");
             break;
         }
 
+        if(response.client_ip <0) {
+            break;
+        }
         int clientThreadId = response.client_ip;
         pthread_mutex_lock(&clientThreadsData[clientThreadId - 1].mutex);
+
+        while (!clientThreadsData[clientThreadId - 1].empty) {
+            pthread_cond_wait(&clientThreadsData[clientThreadId - 1].cond,&clientThreadsData[clientThreadId - 1].mutex);
+        }
+
         responses[clientThreadId- 1 ] = response;
+        clientThreadsData[clientThreadId - 1].empty = 0;
+
         pthread_cond_signal(&clientThreadsData[clientThreadId - 1].cond);
         pthread_mutex_unlock(&clientThreadsData[clientThreadId - 1].mutex);
+
     }
     printf("%s\n", response.info_message);
     return NULL;
@@ -212,7 +231,7 @@ void* frontEndThreadFunction(void* arg) {
 
 int main(int argc, char* argv[]) {
     cli(argc, argv);
-
+    clock_gettime(CLOCK_MONOTONIC,&program_start);
     //input file mode
     if ( clicount != 0 ) {
         pthread_t* clientThreads = malloc(clicount * sizeof(pthread_t));
@@ -225,6 +244,7 @@ int main(int argc, char* argv[]) {
             clientThreadsData[i].thread_id  = i + 1;
             pthread_mutex_init(&clientThreadsData[i].mutex, NULL);
             pthread_cond_init(&clientThreadsData[i].cond, NULL);
+            clientThreadsData[i].empty = 1;
             pthread_create(&clientThreads[i], NULL, clientThreadFunction, &clientThreadsData[i]);
         }
 
@@ -236,7 +256,6 @@ int main(int argc, char* argv[]) {
             pthread_join(clientThreads[i], NULL);
         }
 
-        printf("checkpoint\n");
         isFinished = 1;
         struct Request request;
         struct Response response;
@@ -253,7 +272,7 @@ int main(int argc, char* argv[]) {
 
         strncpy(request.method, "DUMP", sizeof(request.method) - 1);
         request.method[sizeof(request.method) - 1] = '\0';
-        request.client_ip = 1;
+        request.client_ip = -1;
         request.value = malloc(vsize);
         strncpy(request.value, "datastoredump.txt", vsize);
         request.value[vsize - 1] = '\0'; // Ensure null-termination
@@ -266,7 +285,7 @@ int main(int argc, char* argv[]) {
 
         strncpy(request.method, "QUITSERVER", sizeof(request.method) - 1 );
         request.method[sizeof(request.method) - 1 ] = '\0';
-        request.client_ip = 1;
+        request.client_ip = -1;
         request.value = malloc(vsize);
         sendRequest(&request, request_mq );
 
@@ -304,7 +323,7 @@ int main(int argc, char* argv[]) {
 
             strncpy(request.method, token, sizeof(request.method) - 1);
             request.method[sizeof(request.method) - 1] = '\0';
-            request.client_ip = 1;
+            request.client_ip = -1;
             request.value = malloc(vsize);
 
             if (strcmp(request.method, "QUIT") == 0) {
@@ -370,5 +389,5 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    printf("program finished\n" );
+    logger("Program finished\n");
 }

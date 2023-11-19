@@ -5,6 +5,7 @@
 #include "global_clientk.h"
 //Define the global variables
 
+struct timespec program_start;
 int clicount;
 char* fname;
 int vsize;
