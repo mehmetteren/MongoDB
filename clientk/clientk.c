@@ -16,7 +16,6 @@ struct ClientThreadData {
     int thread_id;
     pthread_mutex_t mutex;
     pthread_cond_t cond;
-    // Additional data as needed
 };
 
 struct ClientThreadData* clientThreadsData;  // Array of client thread data
@@ -69,7 +68,6 @@ struct Request parseRequest(char *line, int threadId) {
 }
 
 int sendRequest(struct Request* request, mqd_t send_mq) {
-    //Send the request to the server via message queue
 
     if (request == NULL) {
         fprintf(stderr, "Request pointer is NULL\n");
@@ -108,8 +106,6 @@ int sendRequest(struct Request* request, mqd_t send_mq) {
 }
 
 int receiveResponse(struct Response* response, mqd_t receive_mq) {
-    //Send the request to the server via message queue
-
     if (response == NULL) {
         fprintf(stderr, "Response pointer is NULL\n");
         return -1;
@@ -167,19 +163,17 @@ void* clientThreadFunction(void* arg) {
     const int BUFFER_SIZE = 1050;
     char line[BUFFER_SIZE];
 
-    // Read each line with fgets
     while (fgets(line, BUFFER_SIZE, inputFile) != NULL) {
-        // Process the line here
         struct Request request = parseRequest(line, threadId);
         sendRequest(&request, request_mq);
         if (dlevel == 1) {
             printf("Request of thread%d: %s %ld %s\n", threadId, request.method, request.key, request.value);
         }
-        // Lock mutex and wait for response
+
         pthread_mutex_lock(&data->mutex);
         pthread_cond_wait(&data->cond, &data->mutex);
 
-        // Process the response here
+        // Process the response
         // 404 not found get delete
         // 200 success get delete put
         // 500 server error get delete put
@@ -190,7 +184,7 @@ void* clientThreadFunction(void* arg) {
             if ((strcmp("GET", request.method) == 0) && response.status_code != 404)
                 printf("Value is: %s\n", response.value);
         }
-        // You can add logic to handle the received response
+
         pthread_mutex_unlock(&data->mutex);
     }
 
@@ -208,24 +202,16 @@ void* frontEndThreadFunction(void* arg) {
 
     struct Response response;
 
-    while (!isFinished) {  // Replace with an appropriate condition for termination
+    while (!isFinished) {
 
-        // Placeholder: Receive a response from the server
-        // This should be replaced with actual message queue receive logic
         if (receiveResponse(&response, response_mqt) < 0) {
             perror("Error receiving response\n");
             break;
         }
 
-        // Assuming response.client_ip indicates the client thread to be notified
         int clientThreadId = response.client_ip;
-
-        // Notify the corresponding client thread
         pthread_mutex_lock(&clientThreadsData[clientThreadId - 1].mutex);
-
-        // Process response or store it in a shared area accessible by the client thread
         responses[clientThreadId- 1 ] = response;
-
         pthread_cond_signal(&clientThreadsData[clientThreadId - 1].cond);
         pthread_mutex_unlock(&clientThreadsData[clientThreadId - 1].mutex);
     }
@@ -257,12 +243,10 @@ int main(int argc, char* argv[]) {
         pthread_create(&feThread, NULL, frontEndThreadFunction, NULL);
 
 
-        // Wait for all threads to complete
         for (int i = 0; i < clicount; i++) {
             pthread_join(clientThreads[i], NULL);
         }
 
-        // Wait for the front-end thread to complete (if it ever does)
         isFinished = 1;
 
         mqd_t request_mq;
