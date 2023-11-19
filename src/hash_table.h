@@ -27,6 +27,7 @@ void initHashTable(HashTable *table);
 void insert(HashTable *table, long int key, long int fileOffset);
 long int search(HashTable *table, long int key);
 void delete_ht(HashTable *table, long int key);
+void free_hash_table(HashTable *table);
 
 
 #endif //SRC_HASH_TABLE_H

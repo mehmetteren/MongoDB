@@ -68,6 +68,10 @@ void* worker_thread_func(void* id){
         // check if buffer is empty
         while (count == 0) {
             pthread_cond_wait(&buffer_cond, &buffer_mutex); // wait for a signal from the front-end thread
+
+            if (count < 0){
+
+            }
         }
 
         memcpy(&req, &request_buffer[count - 1], sizeof(Request));
@@ -135,6 +139,7 @@ void* fe_thread_func(){
         while (count == buffer_size) {
             pthread_cond_wait(&buffer_cond, &buffer_mutex); // wait for a signal from a worker thread
         }
+
         memcpy(&request_buffer[count], &req, sizeof(Request));
         count++;
 
@@ -254,6 +259,9 @@ Response dump(Request* request) {
 
 Response quitserver(Request* request) {
     Response response;
+
+    for(int)
+
     response.value = malloc(vsize);
     response.client_ip = request->client_ip;
     response.status_code = 200;

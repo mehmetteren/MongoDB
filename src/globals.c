@@ -19,6 +19,7 @@ char* request_mq_name;
 char* response_mq_name;
 
 int dlevel = DEEP_DEBUG;
+int quit_program = 0;
 
 HashTable** tables;
 pthread_mutex_t* file_locks;

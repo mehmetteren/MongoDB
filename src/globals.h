@@ -35,6 +35,7 @@ extern char* mqname;
 extern char* request_mq_name;
 extern char* response_mq_name;
 extern int dlevel;
+extern int quit_program;
 
 // starts from 1, datafile1 -> 1, datafile2 -> 2, ...
 extern HashTable** tables;

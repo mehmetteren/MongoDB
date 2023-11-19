@@ -28,7 +28,6 @@ int receive_request(Request* req, mqd_t receive_mq) {
         free(buffer);
         return -1;
     }
-    printf("BUFFER: %s, %ld\n", buffer, bytes_read);
 
     memcpy(req, buffer, sizeof(Request) - sizeof(req->value));
 
