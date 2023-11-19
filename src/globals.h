@@ -64,7 +64,7 @@ typedef struct {
     char* value;
 } Entry;
 
-Entry* createEntry(long int key, const char *value, int valueSize);
+Entry *createEntry(long int key, const char *value, int valueSize, bool is_deleted);
 void freeEntry(Entry* entry);
 Response* createResponse(int client_ip, char* value, int status_code, char* info_message, int valueSize);
 void freeResponse(Response* res);

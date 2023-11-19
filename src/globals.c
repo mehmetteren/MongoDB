@@ -81,7 +81,7 @@ int cli( int argc, char *argv[]) {
     return 0;
 }
 
-Entry* createEntry(long int key, const char *value, int valueSize) {
+Entry *createEntry(long int key, const char *value, int valueSize, bool is_deleted) {
     Entry* entry = malloc(sizeof(Entry));
     entry->is_deleted = false;
     entry->key = key;

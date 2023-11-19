@@ -193,7 +193,7 @@ Response put(Request* request) {
     Response response;
     response.client_ip = request->client_ip;
 
-    Entry* entry = createEntry(key, value, vsize);
+    Entry* entry = createEntry(key, value, vsize, 0);
 
     int insert_result = insert_entry(entry);
 
