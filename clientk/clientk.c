@@ -8,8 +8,6 @@
 #include "global_clientk.h"
 #include "util_clientk.h"
 #include <mqueue.h>
-#define MAX_VSIZE 1024
-
 
 struct ClientThreadData {
     int thread_id;

@@ -1,0 +1,1 @@
+/usr/bin/cc -g CMakeFiles/Project_2.dir/clientk.c.o CMakeFiles/Project_2.dir/util_clientk.c.o CMakeFiles/Project_2.dir/global_clientk.c.o -o Project_2 
