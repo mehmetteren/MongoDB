@@ -44,7 +44,7 @@ int delete_entry(long int key){
     }
 }
 
-int get_entry(long int key, Entry* entry){
+int get_entry(long int key, Entry** entry){
     int section = (key % dcount + 1);
 
     long int offset = search(tables[section], key);
@@ -55,7 +55,7 @@ int get_entry(long int key, Entry* entry){
 
     if (offset >= 0){
         // key exists, read entry
-        read_entry_from_file(&entry, fd, offset);
+        read_entry_from_file(entry, fd, offset);
 
         logg(DEEP_DEBUG, "Key <%ld> found\n", key);
         close(fd);
@@ -77,10 +77,8 @@ int insert_entry(Entry* entry){
 
     long int key = entry->key;
     int section = (key % dcount + 1);
-    printf("abc:%d\n",section);
 
     pthread_mutex_lock(&file_locks[section]);
-    printf("section:%d\n",section);
 
     long int offset = search(tables[section], key);
 
@@ -120,7 +118,7 @@ int insert_entry(Entry* entry){
             Entry* temp_entry;
             long int temp_offset = 0;
             while(read_entry_from_file(&temp_entry, fd, temp_offset) >= 0){
-                if (temp_entry.is_deleted || temp_entry.key == entry->key){
+                if (temp_entry->is_deleted || temp_entry->key == entry->key){
                     // found an available offset or the key (maybe hash table not updated yet)
                     break;
                 }
