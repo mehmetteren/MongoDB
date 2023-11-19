@@ -342,7 +342,7 @@ int handle_dump_request(char *dump_file_name) {
 
         close(fd);
     }
-    freeEntry(entry);
+
     close(dump_fd);
     return 0;
 }

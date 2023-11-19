@@ -135,7 +135,6 @@ void* fe_thread_func(){
         while (count == buffer_size) {
             pthread_cond_wait(&buffer_cond, &buffer_mutex); // wait for a signal from a worker thread
         }
-        printf("CHECKPOINT 1\n");
         memcpy(&request_buffer[count], &req, sizeof(Request));
         count++;
 
@@ -242,7 +241,6 @@ Response dump(Request* request) {
     if(handle_dump_request(request->value) >= 0){
         response.status_code = 200;
         sprintf(response.info_message, "DUMPED DATAFILES INTO %s", request->value);
-        
     }
     else{
         response.status_code = 500;
