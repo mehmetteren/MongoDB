@@ -21,7 +21,6 @@ int main(){
 
 int insert_test() {
     //cli
-    long int entry_size = sizeof(long int) + sizeof(bool) + vsize;
     clock_gettime(CLOCK_MONOTONIC, &program_start);
     start_server();
 

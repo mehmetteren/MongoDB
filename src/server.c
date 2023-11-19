@@ -238,8 +238,16 @@ Response delete(Request* request) {
 Response dump(Request* request) {
     Response response;
     response.client_ip = request->client_ip;
-    response.status_code = 200;
-    strcpy(response.info_message, "I HAVEN'T IMPLEMENTED YET");
+
+    if(handle_dump_request(request->value) >= 0){
+        response.status_code = 200;
+        sprintf(response.info_message, "DUMPED DATAFILES INTO %s", request->value);
+        
+    }
+    else{
+        response.status_code = 500;
+        strcpy(response.info_message, "INTERNAL SERVER ERROR");
+    }
     response.value = malloc(vsize);
     strcpy(response.value, "");
 
