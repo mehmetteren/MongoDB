@@ -8,7 +8,6 @@
 #include "global_clientk.h"
 #include "util_clientk.h"
 #include <mqueue.h>
-
 #define MAX_VSIZE 1024
 
 
@@ -22,7 +21,7 @@ struct ClientThreadData* clientThreadsData;  // Array of client thread data
 
 struct Request {
     int client_ip;
-    char method[10];
+    char method[11];
     long int key;
     char* value;
 };
@@ -215,7 +214,7 @@ void* frontEndThreadFunction(void* arg) {
         pthread_cond_signal(&clientThreadsData[clientThreadId - 1].cond);
         pthread_mutex_unlock(&clientThreadsData[clientThreadId - 1].mutex);
     }
-
+    printf("%s\n", response.info_message);
     return NULL;
 }
 
@@ -247,8 +246,8 @@ int main(int argc, char* argv[]) {
             pthread_join(clientThreads[i], NULL);
         }
 
+        printf("checkpoint\n");
         isFinished = 1;
-
         struct Request request;
         struct Response response;
         mqd_t request_mq, response_mq;
@@ -270,16 +269,18 @@ int main(int argc, char* argv[]) {
 
         printf("dump is sent \n");
         sendRequest(&request, request_mq );
+        pthread_join(feThread, NULL);
+
         //receiveResponse(&response, response_mq);
 
-        strncpy(request.method, "QUITSERVER", sizeof(request.method) - 1);
-        request.method[sizeof(request.method) - 1] = '\0';
+        strncpy(request.method, "QUITSERVER", sizeof(request.method) - 1 );
+        request.method[sizeof(request.method) - 1 ] = '\0';
         request.client_ip = 1;
         request.value = malloc(vsize);
         sendRequest(&request, request_mq );
-        receiveResponse(&response, response_mq);
 
-        pthread_join(feThread, NULL);
+        receiveResponse(&response, response_mq);
+        printf("%s\n", response.info_message);
 
     }
 
