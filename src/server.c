@@ -16,6 +16,7 @@
 pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t buffer_cond = PTHREAD_COND_INITIALIZER;
 Request* request_buffer;
+int* thread_ids;
 
 int buffer_size = 50;
 int count = 0;
@@ -148,9 +149,11 @@ void* fe_thread_func(){
 
 int create_workers(){
     workers = (pthread_t *)malloc(tcount * sizeof(pthread_t));
+    thread_ids = (int *)malloc(sizeof(int) * tcount);
 
     for (int i = 0; i < tcount; i++) {
-        if (pthread_create(&workers[i], NULL, worker_thread_func, &i) != 0) {
+        thread_ids[i] = i;
+        if (pthread_create(&workers[i], NULL, worker_thread_func, &thread_ids[i]) != 0) {
             perror("Failed to create worker thread");
             return 1;
         }

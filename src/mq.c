@@ -31,7 +31,6 @@ int receive_request(Request* req, mqd_t receive_mq) {
     printf("BUFFER: %s, %ld\n", buffer, bytes_read);
 
     memcpy(req, buffer, sizeof(Request) - sizeof(req->value));
-    logg(DEEP_DEBUG, "BUFFER WITHOUT VALUE: %s\n", buffer);
 
     req->value = malloc(vsize);
     if (req->value == NULL) {
@@ -40,8 +39,6 @@ int receive_request(Request* req, mqd_t receive_mq) {
         return -1;
     }
     memcpy(req->value, buffer + sizeof(Request) - sizeof(req->value), vsize);
-
-    logg(DEEP_DEBUG, "BUFFER WITH VALUE: %s\n", buffer);
 
     free(buffer);
     return 0;
