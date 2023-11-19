@@ -341,8 +341,9 @@ int handle_dump_request(char *dump_file_name) {
             }
             offset += entry_size;
         }
-
+        dprintf(dump_fd, "\n");
         close(fd);
+
     }
 
     close(dump_fd);
