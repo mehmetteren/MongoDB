@@ -40,12 +40,13 @@ int start_server(){
     pthread_t fe_thread;
     pthread_create(&fe_thread, NULL, fe_thread_func, NULL);
 
-
-
     for (int i = 0; i < tcount; i++) {
         pthread_join(workers[i], NULL);
     }
+
     pthread_join(fe_thread, NULL);
+
+    free(workers);
 
     return 0;
 }
@@ -68,10 +69,12 @@ void* worker_thread_func(void* id){
         // check if buffer is empty
         while (count == 0) {
             pthread_cond_wait(&buffer_cond, &buffer_mutex); // wait for a signal from the front-end thread
+        }
 
-            if (count < 0){
-
-            }
+        if (count < 0){
+            pthread_cond_signal(&buffer_cond);
+            pthread_mutex_unlock(&buffer_mutex);
+            break;
         }
 
         memcpy(&req, &request_buffer[count - 1], sizeof(Request));
@@ -98,22 +101,18 @@ void* worker_thread_func(void* id){
             logg(INFO, "DUMP request received\n");
             res = dump(&req);
         }
-        else if (strcmp(req.method, "QUITSERVER") == 0){
-            logg(INFO, "QUITSERVER request received\n");
-            res = quitserver(&req);
-        }
         else{
             perror("Invalid request type");
             continue;
         }
 
-        // Send response to message queue 2
+        // send response to message queue 2
         if (send_response(&res, mqd) < 0) {
             perror("Error sending response");
-            break; // Exit loop on error
+            break;
         }
-        logg(INFO, "Response sent, client_ip -> %d\n status_code -> %d\n info_message -> %s\n value -> %s",
-             res.client_ip, res.status_code, res.info_message, res.value);
+        logg(INFO, "Response sent from worker #%d, client_ip -> %d\n status_code -> %d\n info_message -> %s\n value -> %s",
+             tid, res.client_ip, res.status_code, res.info_message, res.value);
     }
 
     mq_close(mqd);
@@ -129,6 +128,26 @@ void* fe_thread_func(){
 
         if (receive_request(&req, mqd) < 0) {
             perror("Error receiving request");
+            break;
+        }
+
+        if (strcmp(req.method, "QUITSERVER") == 0){
+            logg(INFO, "QUITSERVER request received\n");
+
+            pthread_mutex_lock(&buffer_mutex);
+            count = -1;
+            pthread_cond_signal(&buffer_cond);
+            pthread_mutex_unlock(&buffer_mutex);
+
+            Response res;
+            res = quitserver(&req);
+
+            // send response to message queue 2
+            if (send_response(&res, mqd) < 0) {
+                perror("Error sending response");
+                break;
+            }
+
             break;
         }
 
@@ -171,18 +190,19 @@ Response get(Request* request) {
     Response response;
     response.client_ip = request->client_ip;
 
-    Entry entry;
-    if (get_entry(key, &entry) < 0){
+    Entry* entry;
+    if (get_entry(key, entry) < 0){
         response.status_code = 404;
         strcpy(response.value, "");
         strcpy(response.info_message, "KEY NOT FOUND");
     }
     else{
         response.status_code = 200;
-        strcpy(response.value, entry.value);
+        strcpy(response.value, entry->value);
         strcpy(response.info_message, "OK");
     }
 
+    freeEntry(entry);
     return response;
 }
 
@@ -260,10 +280,17 @@ Response dump(Request* request) {
 Response quitserver(Request* request) {
     Response response;
 
+    for (int i = 1; i <= dcount; i++){
+        free_hash_table(tables[i]);
+    }
+    free(file_locks);
+    free(thread_ids);
+    free(request_buffer);
+    
     response.value = malloc(vsize);
     response.client_ip = request->client_ip;
     response.status_code = 200;
-    strcpy(response.info_message, "I HAVEN'T IMPLEMENTED YET");
+    strcpy(response.info_message, "QUITTED SERVER");
     strcpy(response.value, "");
 
     // TODO: free memory of hash tables and write them to disk

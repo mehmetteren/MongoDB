@@ -55,7 +55,7 @@ int get_entry(long int key, Entry* entry){
 
     if (offset >= 0){
         // key exists, read entry
-        read_entry_from_file(entry, fd, offset);
+        read_entry_from_file(&entry, fd, offset);
 
         logg(DEEP_DEBUG, "Key <%ld> found\n", key);
         close(fd);
@@ -117,7 +117,7 @@ int insert_entry(Entry* entry){
         }
         else {
             // there is no available offset so traverse the file
-            Entry temp_entry;
+            Entry* temp_entry;
             long int temp_offset = 0;
             while(read_entry_from_file(&temp_entry, fd, temp_offset) >= 0){
                 if (temp_entry.is_deleted || temp_entry.key == entry->key){
@@ -252,7 +252,7 @@ int write_entry_to_file(Entry* entry, int fd, long int file_offset){
 
 }
 
-int read_entry_from_file(Entry* entry, int fd, long int file_offset){
+int read_entry_from_file(Entry** entry, int fd, long int file_offset){
 
     if (file_offset < 0){
         logg(DEEP_DEBUG, "Error reading the entry from file. Offset is negative\n");
@@ -288,7 +288,7 @@ int read_entry_from_file(Entry* entry, int fd, long int file_offset){
         return -1;
     }
 
-    *(entry) = *(createEntry(key, value, vsize, is_deleted));
+    *entry = createEntry(key, value, vsize, is_deleted);
 
     logg(DEEP_DEBUG, "Read entry: key->%ld, is_deleted->%d, value->%s\n", key, is_deleted, value);
     return EXIT_SUCCESS;
@@ -314,7 +314,7 @@ int set_is_deleted(int fd, long int file_offset, bool is_deleted){
 int handle_dump_request(char *dump_file_name) {
     int fd, dump_fd;
     long int offset;
-    Entry entry;
+    Entry* entry;
     long int entry_size = sizeof(long int) + sizeof(bool) + vsize;
 
     dump_fd = open(dump_file_name, O_WRONLY | O_CREAT | O_TRUNC, 0666);
@@ -337,17 +337,16 @@ int handle_dump_request(char *dump_file_name) {
 
         offset = 0;
         while (read_entry_from_file(&entry, fd, offset) >= 0) {
-            if (!entry.is_deleted) {
-                dprintf(dump_fd, "%ld %s", entry.key, entry.value);
+            if (!entry->is_deleted) {
+                dprintf(dump_fd, "%ld %s", entry->key, entry->value);
             }
             offset += entry_size;
         }
-        dprintf(dump_fd, "\n");
         close(fd);
-
     }
 
     close(dump_fd);
+    freeEntry(entry);
     return 0;
 }
 
