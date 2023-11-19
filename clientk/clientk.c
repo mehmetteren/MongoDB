@@ -182,6 +182,7 @@ void* clientThreadFunction(void* arg) {
 }
 
 void* frontEndThreadFunction(void* arg) {
+
     mqd_t response_mqt;
     char* response_mq_name = malloc(strlen(mqname) + sizeof(char));
     sprintf(response_mq_name, "/%s2", mqname);

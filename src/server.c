@@ -260,8 +260,6 @@ Response dump(Request* request) {
 Response quitserver(Request* request) {
     Response response;
 
-    for(int)
-
     response.value = malloc(vsize);
     response.client_ip = request->client_ip;
     response.status_code = 200;
