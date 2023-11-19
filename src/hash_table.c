@@ -13,8 +13,6 @@
 
 void generate_hash_tables(int dcount_) {
 
-    //TODO: implement recovery from file
-
     tables = (HashTable**)malloc(sizeof(HashTable*) * (dcount_ + 1));
     for (int i = 1; i <= dcount_; i++) {
         HashTable* table = (HashTable*)malloc(sizeof(HashTable));
@@ -25,7 +23,7 @@ void generate_hash_tables(int dcount_) {
 
     int fd;
     long int offset;
-    Entry entry;
+    Entry* entry;
     long int entry_size = sizeof(long int) + sizeof(bool) + vsize;
 
     for (int i = 1; i <= dcount_; i++) {
@@ -41,9 +39,9 @@ void generate_hash_tables(int dcount_) {
 
         offset = 0;
         while (read_entry_from_file(&entry, fd, offset) >= 0) {
-            printf("IS DELETED: %d\n", entry.is_deleted);
-            if (!entry.is_deleted) {
-                insert(tables[i], entry.key, offset);
+            printf("IS DELETED: %d\n", entry->is_deleted);
+            if (!entry->is_deleted) {
+                insert(tables[i], entry->key, offset);
             }
             offset += entry_size;
         }
@@ -52,7 +50,6 @@ void generate_hash_tables(int dcount_) {
 
 }
 
-// Hash function
 unsigned int hash(long int key) {
     return key % HASH_TABLE_SIZE;
 }

@@ -14,7 +14,7 @@ typedef struct {
 
 int insert_entry(Entry* entry);
 int delete_entry(long int key);
-int get_entry(long int key, Entry* entry);
+int get_entry(long int key, Entry** entry);
 
 void initialize_metadata(Metadata *metadata);
 void update_metadata_on_delete(Metadata *metadata, long int deletedOffset);
