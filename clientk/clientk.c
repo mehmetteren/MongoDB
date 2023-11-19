@@ -57,7 +57,9 @@ struct Request parseRequest(char *line, int threadId) {
                 token = strtok(NULL, " ");
                 if (token != NULL) {
                     strncpy(req.value, token, vsize);
-                    req.value[sizeof(req.value) - 1] = '\0'; // Ensure null-termination
+
+                    req.value[vsize - 1] = '\0'; // Ensure null-termination
+
                 }
             }
         }
@@ -294,13 +296,18 @@ int main(int argc, char* argv[]) {
     else {
         printf("Interactive mode\n");
         char input[1024];
-        struct Request request;
 
-        mqd_t request_mq;
+        struct Request request;
+        struct Response response;
+        mqd_t request_mq, response_mq;
         char* request_mq_name = malloc(strlen(mqname) + sizeof(char));
+        char* response_mq_name = malloc(strlen(mqname) + sizeof(char));
         sprintf(request_mq_name, "/%s1", mqname);
+        sprintf(response_mq_name, "/%s2", mqname);
         request_mq = mq_open(request_mq_name, O_WRONLY);
+        response_mq = mq_open(response_mq_name, O_RDONLY);
         free(request_mq_name);
+        free(response_mq_name);
 
         while (isFinished == 0) {
             printf("Enter request (PUT, GET, DEL, DUMP, QUIT, QUITSERVER): ");
@@ -323,6 +330,12 @@ int main(int argc, char* argv[]) {
             } else if (strcmp(request.method, "QUITSERVER") == 0) {
                 // Send QUITSERVER request to server
                 sendRequest(&request, request_mq);
+                receiveResponse(&response, response_mq);
+
+                if (dlevel == 1) {
+                    printf("%s\n", response.info_message);
+                }
+
                 isFinished = 1;
                 continue;
             } else if (strcmp(request.method, "DUMP") == 0) {
@@ -331,13 +344,20 @@ int main(int argc, char* argv[]) {
                 if (token != NULL) {
                     // Handle DUMP request logic here
                     strncpy(request.value, token, vsize);
+                    request.value[vsize - 1] = '\0'; // Ensure null-termination
+
                     // The token will have the output file name
                     sendRequest(&request, request_mq);
+                    receiveResponse(&response, response_mq);
+
+                    if (dlevel == 1) {
+                        printf("%s\n", response.info_message);
+                    }
+
                 }
-            } else {
+            } else if( strcmp(request.method, "PUT") == 0 || strcmp(request.method, "GET") == 0 || strcmp(request.method, "DEL") == 0) {
                 // For PUT, GET, DEL
                 token = strtok(NULL, " \n");
-                printf("%s\n", token);
 
                 if (token != NULL) {
                     request.key = atol(token);
@@ -348,12 +368,22 @@ int main(int argc, char* argv[]) {
 
                         if (token != NULL) {
                             strncpy(request.value, token, vsize);
-                            request.value[sizeof(request.value) - 1] = '\0';
+                            request.value[vsize- 1] = '\0';
                         }
                     }
                     // Send the request to the server
                     sendRequest(&request, request_mq);
+                    receiveResponse(&response, response_mq);
+
+                    if (dlevel == 1) {
+                        printf("%s\n", response.info_message);
+                        if ((strcmp("GET", request.method) == 0) && response.status_code != 404)
+                            printf("Value is: %s\n", response.value);
+                    }
                 }
+            }
+            else {
+                printf("INVALID REQUEST\n");
             }
         }
     }
