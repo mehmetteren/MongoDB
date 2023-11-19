@@ -270,7 +270,7 @@ int main(int argc, char* argv[]) {
 
         printf("dump is sent \n");
         sendRequest(&request, request_mq );
-        receiveResponse(&response, response_mq);
+        //receiveResponse(&response, response_mq);
 
         strncpy(request.method, "QUITSERVER", sizeof(request.method) - 1);
         request.method[sizeof(request.method) - 1] = '\0';
