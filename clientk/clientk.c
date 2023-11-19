@@ -81,14 +81,13 @@ int sendRequest(struct Request* request, mqd_t send_mq) {
         perror("Unable to allocate memory for buffer");
         return -1;
     }
-
     if (memcpy(buffer, request, sizeof(struct Request) - sizeof(request->value)) < 0){
         perror("Error copying request's first part");
         free(buffer);
         return -1;
     }
 
-    if (memcpy(buffer + sizeof(struct Request) - sizeof(request->value), request->value, vsize)){
+    if (memcpy(buffer + sizeof(struct Request) - sizeof(request->value), request->value, vsize) < 0){
         perror("Error copying request's second part");
         free(buffer);
         return -1;
@@ -172,7 +171,7 @@ void* clientThreadFunction(void* arg) {
         struct Request request = parseRequest(line, threadId);
         sendRequest(&request, request_mq);
         if (dlevel == 1) {
-            printf("Request of: %s, threadId: %d \n", line, threadId); // Example: Just printing the line
+            printf("Request of thread%d: %s %ld %s\n", threadId, request.method, request.key, request.value);
         }
         // Lock mutex and wait for response
         pthread_mutex_lock(&data->mutex);
@@ -184,8 +183,9 @@ void* clientThreadFunction(void* arg) {
         // 500 server error get delete put
         struct Response response = responses[threadId - 1];
         if (dlevel == 1) {
+            printf("Response of thread%d for %s %ld %s\n",threadId,request.method, request.key, request.value);
             printf("%s\n", response.info_message);
-            if (strcmp("GET", request.method) == 0)
+            if ((strcmp("GET", request.method) == 0) && response.status_code != 404)
                 printf("Value is: %s\n", response.value);
         }
         // You can add logic to handle the received response
@@ -203,9 +203,10 @@ void* frontEndThreadFunction(void* arg) {
     sprintf(response_mq_name, "/%s2", mqname);
     response_mqt = mq_open(response_mq_name, O_RDONLY);
     free(response_mq_name);
+
     struct Response response;
 
-    while (isFinished == 0) {  // Replace with an appropriate condition for termination
+    while (!isFinished) {  // Replace with an appropriate condition for termination
 
         // Placeholder: Receive a response from the server
         // This should be replaced with actual message queue receive logic
@@ -221,7 +222,7 @@ void* frontEndThreadFunction(void* arg) {
         pthread_mutex_lock(&clientThreadsData[clientThreadId - 1].mutex);
 
         // Process response or store it in a shared area accessible by the client thread
-        responses[response.client_ip - 1 ] = response;
+        responses[clientThreadId- 1 ] = response;
 
         pthread_cond_signal(&clientThreadsData[clientThreadId - 1].cond);
         pthread_mutex_unlock(&clientThreadsData[clientThreadId - 1].mutex);
@@ -260,6 +261,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Wait for the front-end thread to complete (if it ever does)
+        isFinished = 1;
 
         mqd_t request_mq;
         char* request_mq_name = malloc(strlen(mqname) + sizeof(char));
@@ -283,9 +285,9 @@ int main(int argc, char* argv[]) {
         request.value = malloc(vsize);
         sendRequest(&request2, request_mq);
 
-        isFinished = 1;
 
         pthread_join(feThread, NULL);
+
     }
 
     // interactive mode
