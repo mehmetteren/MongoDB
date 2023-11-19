@@ -68,5 +68,7 @@ void freeEntry(Entry* entry);
 Response* createResponse(int client_ip, char* value, int status_code, char* info_message, int valueSize);
 void freeResponse(Response* res);
 void logg(int level, const char *format, ...);
+int cli(int, char*[]);
 
+void exit_handler(int);
 #endif //SRC_GLOBALS_H

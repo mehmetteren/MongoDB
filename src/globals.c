@@ -25,6 +25,61 @@ pthread_mutex_t* file_locks;
 pthread_t* workers;
 
 
+int cli( int argc, char *argv[]) {
+
+    if (argc < 2 || argc > 11) {
+        printf("Usage: %s -d dcount -f fname -t tcount -s vsize -m mqname\n", argv[0]);
+        return 1;
+    }
+
+    for (int i = 1; i < argc; i += 2) {
+        if (argv[i][0] == '-' && i + 1 < argc) {
+            switch (argv[i][1]) {
+                case 'd':
+                    dcount = atoi(argv[i + 1]);
+                    break;
+                case 'f':
+                    fname =argv[i + 1];
+                    break;
+                case 't':
+                    tcount = atoi(argv[i + 1]);
+                    break;
+                case 's':
+                    vsize = atoi(argv[i + 1]);
+                    break;
+                case 'm':
+                    mqname = argv[i + 1];
+                    break;
+
+                default:
+                    printf("Invalid option: %s\n", argv[i]);
+                    exit_handler(1);
+            }
+        } else {
+            printf("Invalid arguments\n");
+            exit_handler(1);
+        }
+    }
+
+    if ( dcount < 1 || dcount > 5) {
+        printf("d must be between 1 and 5\n");
+        exit_handler(1);
+    }
+
+    if ( tcount < 1 || tcount > 5) {
+        printf("t must be between 1 and 5\n");
+        exit_handler(1);
+    }
+
+    //verification
+    printf("d: %d\n", dcount);
+    printf("f: %s\n", fname);
+    printf("s: %d\n", vsize);
+    printf("m: %s\n", mqname);
+    printf("t: %d\n", tcount);
+    return 0;
+}
+
 Entry* createEntry(long int key, const char *value, int valueSize) {
     Entry* entry = malloc(sizeof(Entry));
     entry->is_deleted = false;
@@ -96,3 +151,13 @@ void logg(int level, const char *format, ...) {
     va_end(args);
 }
 
+void exit_handler(int sig){
+
+    if (sig == 0){
+        printf("Program exited successfully\n");
+        exit(0);
+    } else {
+        printf("Program exited with signal %d\n", sig);
+        exit(sig);
+    }
+}
