@@ -24,7 +24,7 @@ int write_metadata(int fd, Metadata *metadata);
 
 int generate_datafiles(int count, char* name);
 int write_entry_to_file(Entry* entry, int fd, long int file_offset);
-int read_entry_from_file(Entry* entry, int fd, long int file_offset);
+int read_entry_from_file(Entry** entry, int fd, long int file_offset);
 int set_is_deleted(int fd, long int file_offset, bool is_deleted);
 
 int handle_dump_request(char* dump_file_name);
