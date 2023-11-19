@@ -6,7 +6,7 @@
 #define SRC_GLOBALS_H
 
 // delete_ht the files if you change this
-#define MAX_DELETED_OFFSET_COUNT 2
+#define MAX_DELETED_OFFSET_COUNT 20
 
 #define MAX_VSIZE 1024
 #define MIN_VSIZE 32
