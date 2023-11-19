@@ -315,6 +315,10 @@ int handle_dump_request(char *dump_file_name) {
     Entry* entry;
     long int entry_size = sizeof(long int) + sizeof(bool) + vsize;
 
+    for(int i = 1; i <= dcount; i++){
+        pthread_mutex_lock(&file_locks[i]);
+    }
+
     dump_fd = open(dump_file_name, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (dump_fd < 0) {
         perror("Error opening dump file");
@@ -336,7 +340,7 @@ int handle_dump_request(char *dump_file_name) {
         offset = 0;
         while (read_entry_from_file(&entry, fd, offset) >= 0) {
             if (!entry->is_deleted) {
-                dprintf(dump_fd, "%ld %s", entry->key, entry->value);
+                dprintf(dump_fd, "%ld %s\n", entry->key, entry->value);
             }
             offset += entry_size;
         }
@@ -344,6 +348,9 @@ int handle_dump_request(char *dump_file_name) {
     }
 
     close(dump_fd);
+    for(int i = 1; i <= dcount; i++){
+        pthread_mutex_unlock(&file_locks[i]);
+    }
     freeEntry(entry);
     return 0;
 }
