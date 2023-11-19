@@ -325,7 +325,6 @@ int main(int argc, char* argv[]) {
                 if (dlevel == 1) {
                     printf("%s\n", response.info_message);
                 }
-
                 isFinished = 1;
                 continue;
             } else if (strcmp(request.method, "DUMP") == 0) {
