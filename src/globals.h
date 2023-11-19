@@ -52,7 +52,7 @@ typedef struct {
 // 4 + 10 + 8 + vsize = 22 + vsize
 typedef struct {
     int client_ip;
-    char method[10];
+    char method[11];
     long int key;
     char* value;
 } Request;

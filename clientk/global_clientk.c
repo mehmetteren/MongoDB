@@ -3,7 +3,6 @@
 //
 
 #include "global_clientk.h"
-
 //Define the global variables
 
 int clicount;
@@ -11,4 +10,4 @@ char* fname;
 int vsize;
 char* mqname;
 int dlevel;
-int isFinished;
+int isFinished = 0;
