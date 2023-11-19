@@ -268,6 +268,7 @@ int main(int argc, char* argv[]) {
         strncpy(request.value, "datastoredump.txt", vsize);
         request.value[vsize - 1] = '\0'; // Ensure null-termination
 
+        printf("dump is sent \n");
         sendRequest(&request, request_mq );
         receiveResponse(&response, response_mq);
 

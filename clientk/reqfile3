@@ -1,12 +1,8 @@
 GET 210
 PUT 300 string1
-DEL 300
 PUT 301 string2
 GET 30
 PUT 101 Thatis
-DEL 102
-DEL 125
-DEL 100
 GET 250
 GET 200
 PUT 220 AxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA
