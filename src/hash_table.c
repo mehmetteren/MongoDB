@@ -30,7 +30,7 @@ void generate_hash_tables(int dcount_) {
 
     for (int i = 1; i <= dcount_; i++) {
         char file_name[100];
-        sprintf(file_name, "%s%d", fname, i + 1);  // construct the data file name
+        sprintf(file_name, "%s%d", fname, i);  // construct the data file name
 
         // Open the data file
         fd = open(file_name, O_RDONLY);
@@ -108,4 +108,16 @@ void delete_ht(HashTable *table, long int key) {
         previous = current;
         current = current->next;
     }
+}
+
+void free_hash_table(HashTable *table) {
+    for (int i = 0; i < HASH_TABLE_SIZE; i++) {
+        Node *current = table->buckets[i];
+        while (current) {
+            Node *temp = current;
+            current = current->next;
+            free(temp);
+        }
+    }
+    free(table);
 }
