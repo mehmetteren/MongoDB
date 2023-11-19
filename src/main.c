@@ -15,6 +15,8 @@ int insert_test();
 //gcc -Wall -o server disk.c globals.c hash_table.c server.c mq.c main.c -lrt
 int main(){
     //insert_test();
+    clock_gettime(CLOCK_MONOTONIC, &program_start);
+
     start_server();
     //printf("%ld", sizeof(Request));
 }

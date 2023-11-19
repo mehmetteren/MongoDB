@@ -76,7 +76,7 @@ void logg(int level, const char *format, ...) {
         return;
     }
     struct timespec end;
-    clock_gettime(CLOCK_REALTIME, &end);
+    clock_gettime(CLOCK_MONOTONIC, &end);
 
     long seconds = end.tv_sec - program_start.tv_sec;
     long nanoseconds = end.tv_nsec - program_start.tv_nsec;

@@ -4,9 +4,12 @@
 
 #include "hash_table.h"
 #include "globals.h"
+#include "disk.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/fcntl.h>
 
 void generate_hash_tables(int dcount_) {
 
@@ -18,6 +21,34 @@ void generate_hash_tables(int dcount_) {
         initHashTable(table);
         tables[i] = table;
     }
+    logg(INFO, "Hash tables generated\n");
+
+    int fd;
+    long int offset;
+    Entry entry;
+    long int entry_size = sizeof(long int) + sizeof(bool) + vsize;
+
+    for (int i = 1; i <= dcount_; i++) {
+        char file_name[100];
+        sprintf(file_name, "%s%d", fname, i + 1);  // construct the data file name
+
+        // Open the data file
+        fd = open(file_name, O_RDONLY);
+        if (fd < 0) {
+            perror("Error opening data file");
+            exit(-1);
+        }
+
+        offset = 0;
+        while (read_entry_from_file(&entry, fd, offset) >= 0) {
+            if (!entry.is_deleted) {
+                insert(tables[i], entry.key, offset);
+            }
+            offset += entry_size;
+        }
+        close(fd);
+    }
+
 }
 
 // Hash function

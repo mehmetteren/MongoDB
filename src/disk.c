@@ -138,7 +138,6 @@ int insert_entry(Entry* entry){
 }
 
 
-
 void initialize_metadata(Metadata *metadata) {
     metadata->count = 0;
     for (int i = 0; i < MAX_DELETED_OFFSET_COUNT; i++) {
@@ -322,7 +321,7 @@ int handle_dump_request(char *dump_file_name) {
         return -1;
     }
 
-    printf("Dumping data to file %s\n", dump_file_name);
+    logg(DEEP_DEBUG, "Dumping data to file %s\n", dump_file_name);
     for (int i = 0; i < dcount; i++) {
         char file_name[100];
         sprintf(file_name, "%s%d", fname, i + 1);  // construct the data file name
