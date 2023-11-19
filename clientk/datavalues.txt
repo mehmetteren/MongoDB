@@ -24,3 +24,27 @@ tcount d=5 v-size=64 clicount=5
 3 395
 4 382
 5 460
+
+req time d=5 v-size=64 t=5
+
+put 1.8
+get 0.9
+del 1
+
+req time d=5 v-size=1024 t=5
+
+put 5
+get 0.9
+del 1.1
+
+req time d=3 v-size=64 t=5
+
+put 1 ms
+get  0.9
+del 3
+ 
+req time d=3 v-size=1024 t=5
+
+put 1.1
+get 2.2
+del 0.5

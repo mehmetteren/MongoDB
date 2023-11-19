@@ -61,7 +61,6 @@ struct Request parseRequest(char *line, int threadId) {
             }
         }
     }
-
     return req;
 }
 
@@ -231,8 +230,8 @@ void* frontEndThreadFunction(void* arg) {
 
 int main(int argc, char* argv[]) {
     cli(argc, argv);
-    clock_gettime(CLOCK_MONOTONIC,&program_start);
     //input file mode
+    clock_gettime(CLOCK_MONOTONIC,&program_start);
     if ( clicount != 0 ) {
         pthread_t* clientThreads = malloc(clicount * sizeof(pthread_t));
         clientThreadsData = malloc(clicount * sizeof(struct ClientThreadData));
@@ -292,6 +291,10 @@ int main(int argc, char* argv[]) {
         receiveResponse(&response, response_mq);
         printf("%s\n", response.info_message);
 
+
+        free(clientThreads);
+        free(responses);
+        free(clientThreadsData);
     }
 
     // interactive mode
@@ -317,7 +320,6 @@ int main(int argc, char* argv[]) {
                 printf("Error reading input.\n");
                 continue;
             }
-
             char *token = strtok(input, " \n");
             if (token == NULL) continue;
 
@@ -332,8 +334,9 @@ int main(int argc, char* argv[]) {
             } else if (strcmp(request.method, "QUITSERVER") == 0) {
                 // Send QUITSERVER request to server
                 sendRequest(&request, request_mq);
+                logger("request sent \n");
                 receiveResponse(&response, response_mq);
-
+                logger("request received \n");
                 if (dlevel == 1) {
                     printf("%s\n", response.info_message);
                 }
@@ -349,7 +352,9 @@ int main(int argc, char* argv[]) {
 
                     // The token will have the output file name
                     sendRequest(&request, request_mq);
+                    logger("request sent \n");
                     receiveResponse(&response, response_mq);
+                    logger("request received \n");
 
                     if (dlevel == 1) {
                         printf("%s\n", response.info_message);
@@ -365,8 +370,6 @@ int main(int argc, char* argv[]) {
 
                     if (strcmp(request.method, "PUT") == 0) {
                         token = strtok(NULL, " \n");
-                        printf("%s\n", token);
-
                         if (token != NULL) {
                             strncpy(request.value, token, vsize);
                             request.value[vsize- 1] = '\0';
@@ -374,8 +377,9 @@ int main(int argc, char* argv[]) {
                     }
                     // Send the request to the server
                     sendRequest(&request, request_mq);
+                    logger("request sent \n");
                     receiveResponse(&response, response_mq);
-
+                    logger("request received \n");
                     if (dlevel == 1) {
                         printf("%s\n", response.info_message);
                         if ((strcmp("GET", request.method) == 0) && response.status_code != 404)
