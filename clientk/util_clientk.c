@@ -52,11 +52,6 @@ int cli( int argc, char *argv[]) {
     }
 
     //verification
-    printf("n: %d\n", clicount);
-    printf("f: %s\n", fname);
-    printf("s: %d\n", vsize);
-    printf("m: %s\n", mqname);
-    printf("d: %d\n", dlevel);
     isFinished = 0;
     return 0;
 }
