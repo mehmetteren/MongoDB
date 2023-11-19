@@ -313,7 +313,7 @@ int set_is_deleted(int fd, long int file_offset, bool is_deleted){
 int handle_dump_request(char *dump_file_name) {
     int fd, dump_fd;
     long int offset;
-    Entry entry;
+    Entry* entry = NULL;
 
     dump_fd = open(dump_file_name, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (dump_fd < 0) {
@@ -333,16 +333,16 @@ int handle_dump_request(char *dump_file_name) {
         }
 
         offset = 0;
-        while (read_entry_from_file(&entry, fd, offset) > 0) {
-            if (!entry.is_deleted) {
-                dprintf(dump_fd, "%ld %s\n", entry.key, entry.value);
+        while (read_entry_from_file(entry, fd, offset) > 0) {
+            if (!entry->is_deleted) {
+                dprintf(dump_fd, "%ld %s\n", entry->key, entry->value);
             }
             offset += sizeof(Entry);
         }
 
         close(fd);
     }
-    freeEntry(&entry);
+    freeEntry(entry);
     close(dump_fd);
     return 0;
 }
