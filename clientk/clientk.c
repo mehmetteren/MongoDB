@@ -65,15 +65,12 @@ struct Request parseRequest(char *line, int threadId) {
 }
 
 int sendRequest(struct Request* request, mqd_t send_mq) {
-
     if (request == NULL) {
         fprintf(stderr, "Request pointer is NULL\n");
         return -1;
     }
-
     size_t total_size = sizeof(struct Request) - sizeof(request->value) + vsize;
     char *buffer = malloc(total_size);
-
     if (buffer == NULL) {
         perror("Unable to allocate memory for buffer");
         return -1;
@@ -83,13 +80,11 @@ int sendRequest(struct Request* request, mqd_t send_mq) {
         free(buffer);
         return -1;
     }
-
     if (memcpy(buffer + sizeof(struct Request) - sizeof(request->value), request->value, vsize) < 0){
         perror("Error copying request's second part");
         free(buffer);
         return -1;
     }
-
     // Send the buffer
     int status = mq_send(send_mq, buffer, total_size, 0);
     if (status == -1) {
@@ -97,7 +92,6 @@ int sendRequest(struct Request* request, mqd_t send_mq) {
         free(buffer);
         return -1;
     }
-
     free(buffer);
     return 0;
 }
@@ -107,7 +101,6 @@ int receiveResponse(struct Response* response, mqd_t receive_mq) {
         fprintf(stderr, "Response pointer is NULL\n");
         return -1;
     }
-
     size_t total_size = sizeof(struct Response) - sizeof(response->value) + vsize;
 
     char *buffer = malloc(total_size);
@@ -122,9 +115,7 @@ int receiveResponse(struct Response* response, mqd_t receive_mq) {
         free(buffer);
         return -1;
     }
-
     memcpy(response, buffer, sizeof(struct Response) - sizeof(response->value));
-
     response->value = malloc(vsize);
     if (response->value == NULL) {
         perror("Unable to allocate memory for request value");
@@ -255,6 +246,7 @@ int main(int argc, char* argv[]) {
         sprintf(response_mq_name, "/%s2", mqname);
         request_mq = mq_open(request_mq_name, O_WRONLY);
         response_mq = mq_open(response_mq_name, O_RDONLY);
+
         free(request_mq_name);
         free(response_mq_name);
 
