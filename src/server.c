@@ -26,8 +26,8 @@ int start_server(){
     generate_datafiles(dcount, fname);
     generate_hash_tables(dcount);
 
-    file_locks = (pthread_mutex_t *)malloc(dcount * sizeof(pthread_mutex_t));
-    for (int i = 0; i < dcount; i++) {
+    file_locks = (pthread_mutex_t *)malloc(dcount * sizeof(pthread_mutex_t) + sizeof(pthread_mutex_t));
+    for (int i = 1; i <= dcount; i++) {
         pthread_mutex_init(&file_locks[i], NULL);
     }
 

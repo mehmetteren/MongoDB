@@ -13,8 +13,9 @@
 #include "server.h"
 int insert_test();
 //gcc -Wall -o server disk.c globals.c hash_table.c server.c mq.c main.c -lrt
-int main(){
+int main(int argc, char* argv[]){
     //insert_test();
+    cli(argc, argv);
     clock_gettime(CLOCK_MONOTONIC, &program_start);
 
     start_server();

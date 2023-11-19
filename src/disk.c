@@ -77,8 +77,10 @@ int insert_entry(Entry* entry){
 
     long int key = entry->key;
     int section = (key % dcount + 1);
+    printf("abc:%d\n",section);
 
     pthread_mutex_lock(&file_locks[section]);
+    printf("section:%d\n",section);
 
     long int offset = search(tables[section], key);
 
