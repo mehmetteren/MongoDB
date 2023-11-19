@@ -41,6 +41,7 @@ void generate_hash_tables(int dcount_) {
 
         offset = 0;
         while (read_entry_from_file(&entry, fd, offset) >= 0) {
+            printf("IS DELETED: %d\n", entry.is_deleted);
             if (!entry.is_deleted) {
                 insert(tables[i], entry.key, offset);
             }
