@@ -332,7 +332,6 @@ int main(int argc, char* argv[]) {
                 isFinished = 1;
                 continue;
             } else if (strcmp(request.method, "QUITSERVER") == 0) {
-                // Send QUITSERVER request to server
                 sendRequest(&request, request_mq);
                 logger("request sent \n");
                 receiveResponse(&response, response_mq);
@@ -346,11 +345,9 @@ int main(int argc, char* argv[]) {
                 token = strtok(NULL, " \n");
                 printf("%s\n", token);
                 if (token != NULL) {
-                    // Handle DUMP request logic here
                     strncpy(request.value, token, vsize);
                     request.value[vsize - 1] = '\0'; // Ensure null-termination
 
-                    // The token will have the output file name
                     sendRequest(&request, request_mq);
                     logger("request sent \n");
                     receiveResponse(&response, response_mq);
@@ -375,7 +372,6 @@ int main(int argc, char* argv[]) {
                             request.value[vsize- 1] = '\0';
                         }
                     }
-                    // Send the request to the server
                     sendRequest(&request, request_mq);
                     logger("request sent \n");
                     receiveResponse(&response, response_mq);
